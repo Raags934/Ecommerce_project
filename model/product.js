@@ -6,7 +6,9 @@ const Schema = mongoose.Schema;// pro // quatity managmnt //
 const schema = new Schema({
     category_id: { type: Schema.Types.ObjectId, refPath: "category", index: true }, //sub category id like pj /boxer
 
-    sub_category_id: { type: Schema.Types.ObjectId, refPath: "subcategory", index: true }, //sub category id like pj /boxer
+    sub_category_id: { type: Schema.Types.ObjectId, refPath: "sub_category", index: true }, //sub category id like pj /boxer
+
+    detailed_sub_category_id: { type: Schema.Types.ObjectId, refPath: "detailed_sub_category", required: false, index: true }, //sub category id like pj /boxer
 
     related_product_id: [{ type: Schema.Types.ObjectId, refPath: "product", required: false, index: true }], //product related to other product 
 
@@ -15,14 +17,11 @@ const schema = new Schema({
 
     price: { type: Number, required: true, index: true },
 
-    // product_image :[{ type: String}],//pack of 4 photo is there poin
 
     product_image: [// array of object 
         {
-            image_name: { type: String, default: '' }
-        },
-        {
-            thumbnail: { type: String, default: '' }
+            product_image_name: { type: String, default: '' },
+            product_thumbnail_name: { type: String, default: '' }
         },
     ],
 

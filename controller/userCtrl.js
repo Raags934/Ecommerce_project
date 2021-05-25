@@ -88,3 +88,14 @@ out.userLogout = async (body) => {
     let _r = await userService.user_change_password(body.headers, body.requestbody);
     return {status: ResponseStatusCode.SUCCESS, data: _r};
 };
+
+
+
+out.listProduct = async (body) => {
+
+    await joiValidator.validator(schema._list_post, body.requestbody);
+    body = {...body, ...body.requestbody};
+
+    let _r = await userService._list_product(body);
+    return { status: ResponseStatusCode.SUCCESS, data: _r };
+};

@@ -6,6 +6,7 @@ module.exports = {
     cart :require('./cart'),
     category:require('./category'),
     coupan :require('./coupan'),
+    detailed_sub_category : require('./detailed_sub_category'),
     notification :require('./notification'),
     order :require('./order'),
     product_inventary :require('./product_inventary'),

@@ -1,11 +1,10 @@
 `use strict`;
 
-const { user, admin_defaults, post, notification, reading, author, category, app_versions } = require("../model");
+const { user, product, sub_category, detailed_sub_category, category } = require("../model");
 const responseMessage = require("../utils/responseMessage");
-const { encryptPassword, tokenGenerator, decryptPassword, sendEmail, sendSingleNotification } = require("../utils/commonFunction");
-const { Role, SecretKey, ResponseStatusCode, Menu_Author, Type, Status, PublishedType, MailContent, NotificationType } = require("../utils/constant");
+const { encryptPassword, tokenGenerator, decryptPassword, sendEmail } = require("../utils/commonFunction");
+const { Role, SecretKey, ResponseStatusCode, Type, Status, MailContent } = require("../utils/constant");
 const moment = require('moment');
-const _ = require('lodash');
 
 
 const out = {};
@@ -115,7 +114,7 @@ out._userLoginWithOtp = async (body) => {
                 role = Role.USER; secretKey = SecretKey.JWT_SECRET_KEY_USER;
                 token = await tokenGenerator(role, _user['_id'], secretKey);
 
-                let dataToUpdate = { access_token: token , otp : ''};
+                let dataToUpdate = { access_token: token, otp: '' };
                 if (body.device_token) dataToUpdate.device_token = body.device_token;
 
                 _user = await user.findOneAndUpdate(criteria, dataToUpdate, { new: true }).lean(true);
@@ -320,7 +319,7 @@ out._new_password = async (body) => {
 /** Logout user  */
 out._user_logout = async (body) => {
     let criteria = { _id: body.headers._id };
-    let dataToUpdate = { "access_token": "", device_token : ''};
+    let dataToUpdate = { "access_token": "", device_token: '' };
     _user = await user.findOneAndUpdate(criteria, (dataToUpdate)).lean(true);
 
     return { status: ResponseStatusCode.SUCCESS, message: responseMessage.UserSuccessfullyLogout }
@@ -328,21 +327,103 @@ out._user_logout = async (body) => {
 
 
 
-out.user_change_password = async (userData, body)=>{
+out.user_change_password = async (userData, body) => {
 
-    if(!await decryptPassword(body.current_password, userData.password)){
-        throw { status: ResponseStatusCode.BADREQUEST, message: responseMessage.WrongOldPassword};
+    if (!await decryptPassword(body.current_password, userData.password)) {
+        throw { status: ResponseStatusCode.BADREQUEST, message: responseMessage.WrongOldPassword };
     }
-    else if (await decryptPassword(body.new_password, userData.password)){
+    else if (await decryptPassword(body.new_password, userData.password)) {
         throw { status: ResponseStatusCode.BADREQUEST, message: responseMessage.SamePassword };
     }
-    else if (body.new_password !== body.confirm_password){
+    else if (body.new_password !== body.confirm_password) {
         throw { status: ResponseStatusCode.BADREQUEST, message: responseMessage.PasswordNotSame };
     }
     else {
-        
-        let  password  = await encryptPassword(body.new_password);
-        await user.findOneAndUpdate({_id:userData._id}, {password : password}) ;
+
+        let password = await encryptPassword(body.new_password);
+        await user.findOneAndUpdate({ _id: userData._id }, { password: password });
         return { status: ResponseStatusCode.SUCCESS, message: responseMessage.NewPasswordSuccessfullySet }
     }
+};
+
+
+
+/** List post */
+
+out._list_product = async (body) => {
+
+    let criteria = {
+        // status: Status.ENABLE,
+    };
+    let query = {};
+
+    let search_condition = new RegExp(body.search, 'i');
+    if (body._id) {
+        criteria = {
+            $and: [{
+                $or: [
+                    { category_id: body._id }, { sub_category_id: body._id }, { detailed_sub_category_id: body._id }
+                ]
+            },{item_name: search_condition}]
+
+        }
+    } else {
+        query.category_name = search_condition;
+        let data = await category.findOne(query, { _id: 1 });
+        if (data) {
+            criteria = {
+                $or: [
+                    { category_id: data._id }, { item_name: search_condition },
+                ]
+            }
+
+        } else {
+            delete query.category_name;
+            query.sub_category_name = search_condition;
+            data = await sub_category.findOne(query, { _id: 1 });
+            if (data) {
+                criteria = {
+                    $or: [
+                        { sub_category_id: data._id }, { item_name: search_condition },
+                    ]
+                }
+            } else {
+                delete query.sub_category_name;
+                query.detailed_sub_category_name = search_condition
+                data = await detailed_sub_category.findOne(query, { _id: 1 });
+                if (data) {
+                    criteria = {
+                        $or: [
+                            { detailed_sub_category_name: data._id }, { item_name: search_condition },
+                        ]
+                    }
+                } else {
+                    criteria.item_name = search_condition;
+                }
+            }
+        }
+
+    }
+    let project = {
+        createdAt: 0,
+        updatedAt: 0,
+        added_by: 0,
+        blocked_by: 0,
+        status: 0,
+        publish_status: 0,
+        is_featured: 0,
+    };
+
+    let populateArray = [
+        { path: 'category_id', select: 'category_name', model: 'Category' },
+        { path: 'sub_category_id', select: 'sub_category_name', model: 'SubCategory' },
+        { path: 'detailed_sub_category_id', select: 'detailed_sub_category_name', model: 'DetailedSubCategory' },
+    ];
+
+    let functionArray = [
+        product.find(criteria, project).populate(populateArray).limit(3).sort({ _id: -1 }).lean(true),
+    ];
+    let [productInfo] = await Promise.all(functionArray);
+
+    return { status: ResponseStatusCode.SUCCESS, message: responseMessage.Success, data: { productInfo } }
 };

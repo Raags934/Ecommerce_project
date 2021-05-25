@@ -15,10 +15,15 @@ module.exports = {
     AuthorUpdatedSuccessfully: "Author updated successfully",
     AuthorBlockedSuccessfully: "Author blocked successfully",
 
-    PostAddedSuccessfully: "Post added successfully",
-    PostUpdatedSuccessfully: "Post updated successfully",
-    PostBlockedSuccessfully: "Post blocked successfully",
-    PostUnBlockedSuccessfully: "Post unblocked successfully",
+    PostAddedSuccessfully: "Product added successfully",
+    PostUpdatedSuccessfully: "Product updated successfully",
+    PostBlockedSuccessfully: "Product blocked successfully",
+    PostUnBlockedSuccessfully: "Product unblocked successfully",
+
+
+    CsvFileGeneratedSuccessful: "Csv file  generated successfully",
+
+
 
     AdminAddedSuccessfully: "Admin added successfully",
     AdminUpdatedSuccessfully: "Admin updated successfully",
